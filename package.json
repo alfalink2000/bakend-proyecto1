@@ -1,0 +1,50 @@
+{
+  "name": "backend-minimarket",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "production": "NODE_ENV=production node server.js",
+    "test": "echo \"No tests specified\" && exit 0",
+    "railway": "node server.js",
+    "checkAdmin": "node scripts/checkAdmin.js"
+  },
+  "keywords": [
+    "minimarket",
+    "api",
+    "backend",
+    "express"
+  ],
+  "author": "Tu Nombre",
+  "license": "ISC",
+  "description": "Backend para catálogo digital de minimarket",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.1.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.15.1",
+    "sequelize": "^6.37.7",
+    "sharp": "^0.34.4",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/helmet": "^0.0.48",
+    "nodemon": "^3.0.1"
+  }
+}
