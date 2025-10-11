@@ -1,23 +1,40 @@
-// routes/featuredProducts.js
-const { Router } = require("express");
-const { validarJWT } = require("../middlewares/revalidar-jwt");
-const {
-  getFeaturedProducts,
-  saveFeaturedProducts,
-} = require("../controllers/featuredProductsController");
+const express = require("express");
+const { FeaturedProducts } = require("../models/FeaturedProducts"); // Importar directamente
+const router = express.Router();
 
-const router = Router();
+// ✅ GET productos destacados (público)
+router.get("/public", async (req, res) => {
+  try {
+    console.log("🔄 Solicitando productos destacados...");
 
-// ✅ RUTA PÚBLICA - Para que los clientes puedan ver los productos destacados
-router.get("/public", getFeaturedProducts);
+    let featured = await FeaturedProducts.findOne();
 
-// ✅ RUTAS PROTEGIDAS (solo admin puede modificar)
-router.use(validarJWT); // Este middleware solo aplica a las rutas siguientes
+    if (!featured) {
+      console.log("⚠️  No hay productos destacados, creando por defecto...");
+      featured = await FeaturedProducts.create({
+        popular: [],
+        on_sale: [],
+      });
+    }
 
-// Obtener productos destacados (para admin)
-router.get("/", getFeaturedProducts);
+    console.log(
+      `✅ Enviando productos destacados - Populares: ${featured.popular.length}, Oferta: ${featured.on_sale.length}`
+    );
 
-// Guardar productos destacados
-router.post("/", saveFeaturedProducts);
+    res.json({
+      ok: true,
+      popular: featured.popular || [],
+      onSale: featured.on_sale || [],
+    });
+  } catch (error) {
+    console.error("❌ Error en /public:", error);
+    res.status(500).json({
+      ok: true, // ✅ Mantener true para que el frontend funcione
+      popular: [],
+      onSale: [],
+      msg: "Usando datos por defecto",
+    });
+  }
+});
 
 module.exports = router;

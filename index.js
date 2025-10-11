@@ -92,31 +92,19 @@ app.get("/api/test/products", (req, res) => {
   });
 });
 
-// ✅ CARGAR MODELOS Y ASOCIACIONES (OPCIONAL)
-const loadModelsAndAssociations = async () => {
+// ✅ CARGAR MODELOS DIRECTAMENTE (VERSIÓN SIMPLIFICADA)
+const loadModels = async () => {
   try {
-    console.log("🔄 Cargando modelos y asociaciones...");
+    console.log("🔄 Cargando modelos...");
 
-    // Importar modelos
-    const Product = require("./models/Product");
-    const Category = require("./models/Category");
+    // Solo importar los modelos - ya están asociados en su definición
+    require("./models/Product");
+    require("./models/Category");
+    require("./models/AppConfig");
+    require("./models/User");
+    require("./models/FeaturedProducts");
 
-    // ✅ DEFINIR ASOCIACIONES DIRECTAMENTE EN LOS MODELOS
-    Product.belongsTo(Category, {
-      foreignKey: "category_id",
-      as: "category",
-      onDelete: "RESTRICT",
-      onUpdate: "CASCADE",
-    });
-
-    Category.hasMany(Product, {
-      foreignKey: "category_id",
-      as: "products",
-      onDelete: "RESTRICT",
-      onUpdate: "CASCADE",
-    });
-
-    console.log("✅ Modelos y asociaciones cargadas correctamente");
+    console.log("✅ Modelos cargados correctamente");
     return true;
   } catch (error) {
     console.error("❌ Error cargando modelos:", error.message);
@@ -194,8 +182,8 @@ const startServer = async () => {
         console.log("✅ Base de datos conectada");
         dbConnected = true;
 
-        // ✅ CARGAR ASOCIACIONES SI LA BD ESTÁ CONECTADA
-        await loadModelsAndAssociations();
+        // ✅ CARGAR MODELOS SIMPLEMENTE
+        await loadModels();
 
         // Sincronizar modelos solo en desarrollo y si la BD está conectada
         if (process.env.NODE_ENV === "development" && dbConnected) {

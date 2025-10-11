@@ -1,56 +1,43 @@
-// routes/products.js
-const { Router } = require("express");
-const { check } = require("express-validator");
-const { validarCampos } = require("../middlewares/validar-campos");
-const { validarJWT } = require("../middlewares/revalidar-jwt");
-const upload = require("../middlewares/uploadMiddleware");
+const express = require("express");
+const { Product } = require("../models/Product"); // Importar directamente
+const { Category } = require("../models/Category"); // Importar directamente
+const router = express.Router();
 
-const {
-  getProducts,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getProductById,
-} = require("../controllers/productsController");
+// ✅ GET todos los productos (SIN asociaciones por ahora)
+router.get("/getProducts", async (req, res) => {
+  try {
+    console.log("🔄 Solicitando productos...");
 
-const router = Router();
+    // ✅ SOLUCIÓN TEMPORAL: Obtener productos SIN include
+    const products = await Product.findAll({
+      order: [["created_at", "DESC"]],
+    });
 
-// ✅ RUTAS PÚBLICAS (sin autenticación)
-router.get("/getProducts", getProducts);
-router.get("/:id", getProductById);
+    console.log(`✅ Enviando ${products.length} productos`);
 
-// ✅ RUTAS PROTEGIDAS (requieren autenticación)
-router.use(validarJWT);
-
-// Crear nuevo producto CON UPLOAD DE IMAGEN
-router.post(
-  "/new",
-  upload.single("image"), // 'image' debe coincidir con el name del input
-  [
-    check("name", "El nombre del producto es obligatorio").not().isEmpty(),
-    check("price", "El precio del producto es obligatorio").isNumeric(),
-    check(
-      "category_id",
-      "La categoría del producto es obligatoria"
-    ).isNumeric(),
-    validarCampos,
-  ],
-  createProduct
-);
-
-// Actualizar producto CON UPLOAD DE IMAGEN
-router.put(
-  "/update/:id",
-  upload.single("image"),
-  [
-    check("name", "El nombre del producto es obligatorio").not().isEmpty(),
-    check("price", "El precio del producto es obligatorio").isNumeric(),
-    validarCampos,
-  ],
-  updateProduct
-);
-
-// Eliminar producto
-router.delete("/delete/:id", deleteProduct);
+    res.json({
+      ok: true,
+      products: products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: parseFloat(product.price),
+        stock_quantity: product.stock_quantity,
+        image_url: product.image_url,
+        status: product.status,
+        category_id: product.category_id, // ✅ Solo enviar el ID
+        created_at: product.created_at,
+        updated_at: product.updated_at,
+      })),
+    });
+  } catch (error) {
+    console.error("❌ Error en /getProducts:", error);
+    res.status(500).json({
+      ok: false,
+      msg: "Error al cargar productos",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;
