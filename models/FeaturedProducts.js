@@ -3,7 +3,7 @@ const { DataTypes } = require("sequelize");
 const { db } = require("../database/connection");
 
 const FeaturedProducts = db.define(
-  "featured_products",
+  "FeaturedProducts",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,14 +11,40 @@ const FeaturedProducts = db.define(
       autoIncrement: true,
     },
     popular: {
-      type: DataTypes.JSON, // Almacenamos array de IDs como JSON
+      type: DataTypes.JSONB,
       allowNull: false,
       defaultValue: [],
+      validate: {
+        isValidJSON(value) {
+          try {
+            if (typeof value === "string") {
+              JSON.parse(value);
+            } else if (!Array.isArray(value)) {
+              throw new Error("Debe ser un array JSON");
+            }
+          } catch (error) {
+            throw new Error("Formato JSON inválido para popular");
+          }
+        },
+      },
     },
     on_sale: {
-      type: DataTypes.JSON, // Almacenamos array de IDs como JSON
+      type: DataTypes.JSONB,
       allowNull: false,
       defaultValue: [],
+      validate: {
+        isValidJSON(value) {
+          try {
+            if (typeof value === "string") {
+              JSON.parse(value);
+            } else if (!Array.isArray(value)) {
+              throw new Error("Debe ser un array JSON");
+            }
+          } catch (error) {
+            throw new Error("Formato JSON inválido para on_sale");
+          }
+        },
+      },
     },
     created_at: {
       type: DataTypes.DATE,

@@ -1,4 +1,4 @@
-// routes/appConfig.js
+// routes/appConfig.js - ARCHIVO CORREGIDO
 const { Router } = require("express");
 const { validarJWT } = require("../middlewares/revalidar-jwt");
 const {

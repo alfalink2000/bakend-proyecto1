@@ -3,7 +3,7 @@ const { DataTypes } = require("sequelize");
 const { db } = require("../database/connection");
 
 const Category = db.define(
-  "categories",
+  "Category",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -14,6 +14,10 @@ const Category = db.define(
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
+      validate: {
+        notEmpty: true,
+        len: [1, 100]
+      }
     },
     created_at: {
       type: DataTypes.DATE,

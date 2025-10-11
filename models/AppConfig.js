@@ -13,22 +13,37 @@ const AppConfig = db.define(
     app_name: {
       type: DataTypes.STRING(255),
       defaultValue: "Minimarket Digital",
+      validate: {
+        len: [1, 255],
+      },
     },
     app_description: {
       type: DataTypes.TEXT,
       defaultValue: "Tu tienda de confianza",
     },
     theme: {
-      type: DataTypes.ENUM("blue", "green", "purple", "orange", "rose"),
+      type: DataTypes.STRING(20),
       defaultValue: "blue",
+      validate: {
+        isIn: {
+          args: [["blue", "green", "purple", "orange", "rose"]],
+          msg: "El tema debe ser uno de: blue, green, purple, orange, rose",
+        },
+      },
     },
     whatsapp_number: {
       type: DataTypes.STRING(20),
       defaultValue: "+5491112345678",
+      validate: {
+        len: [1, 20],
+      },
     },
     business_hours: {
       type: DataTypes.STRING(100),
       defaultValue: "Lun-Vie: 8:00 - 20:00",
+      validate: {
+        len: [1, 100],
+      },
     },
     business_address: {
       type: DataTypes.TEXT,
@@ -37,6 +52,22 @@ const AppConfig = db.define(
     logo_url: {
       type: DataTypes.STRING(500),
       allowNull: true,
+      validate: {
+        isUrl: {
+          msg: "Debe ser una URL válida",
+          protocols: ["http", "https"],
+          require_protocol: true,
+        },
+        len: [0, 500],
+      },
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
