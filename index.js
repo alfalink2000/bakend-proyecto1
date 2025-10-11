@@ -88,26 +88,6 @@ app.get("/api/test/products", (req, res) => {
   });
 });
 
-// ✅ CARGAR MODELOS DIRECTAMENTE (VERSIÓN SIMPLIFICADA)
-// const loadModels = async () => {
-//   try {
-//     console.log("🔄 Cargando modelos...");
-
-//     // Solo importar los modelos - ya están asociados en su definición
-//     require("./models/Product");
-//     require("./models/Category");
-//     require("./models/AppConfig");
-//     require("./models/User");
-//     require("./models/FeaturedProducts");
-
-//     console.log("✅ Modelos cargados correctamente");
-//     return true;
-//   } catch (error) {
-//     console.error("❌ Error cargando modelos:", error.message);
-//     return false;
-//   }
-// };
-
 // ✅ VERIFICACIÓN DE ARCHIVOS DE RUTAS
 console.log("🔍 Verificando archivos de rutas...");
 const routesDir = path.join(__dirname, "routes");
@@ -237,13 +217,13 @@ const startServer = async () => {
   }
 };
 
-console.log("🔍 Debug Database URL:", {
-  hasUrl: !!process.env.DATABASE_URL,
-  urlLength: process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0,
-  host: process.env.DATABASE_URL
-    ? new URL(process.env.DATABASE_URL).hostname
-    : "No URL",
-});
+// ✅ REEMPLAZA CON ESTO (más seguro):
+if (process.env.DATABASE_URL) {
+  const cleanDbUrl = process.env.DATABASE_URL.split("\n")[0];
+  console.log("🔗 Database configurada - Host:", new URL(cleanDbUrl).hostname);
+} else {
+  console.log("❌ DATABASE_URL no configurada");
+}
 
 // ✅ INICIAR TODO
 startServer();
