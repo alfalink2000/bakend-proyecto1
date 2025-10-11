@@ -6,7 +6,6 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-
 // ✅ CONFIGURACIÓN CORS SIMPLIFICADA
 app.use(
   cors({

@@ -1,14 +1,12 @@
 const express = require("express");
+const { Product, Category } = require("../models"); // ✅ Importar desde index
 const router = express.Router();
-
-// ✅ IMPORTAR MODELOS DIRECTAMENTE
-const Product = require("../models/Product");
-const Category = require("../models/Category");
 
 router.get("/getProducts", async (req, res) => {
   try {
     console.log("🔄 Solicitando productos...");
-    console.log("🔍 Product model:", !!Product); // Debug
+    console.log("🔍 Product model:", !!Product);
+    console.log("🔍 Category model:", !!Category);
 
     const products = await Product.findAll({
       include: [

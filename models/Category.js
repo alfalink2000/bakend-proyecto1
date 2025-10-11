@@ -1,4 +1,3 @@
-// models/Category.js
 const { DataTypes } = require("sequelize");
 const { db } = require("../database/connection");
 
@@ -16,8 +15,8 @@ const Category = db.define(
       unique: true,
       validate: {
         notEmpty: true,
-        len: [1, 100]
-      }
+        len: [1, 100],
+      },
     },
     created_at: {
       type: DataTypes.DATE,
@@ -35,5 +34,13 @@ const Category = db.define(
     tableName: "categories",
   }
 );
+
+// ✅ AGREGAR ASOCIACIÓN DESPUÉS de definir el modelo
+Category.associate = function (models) {
+  Category.hasMany(models.Product, {
+    foreignKey: "category_id",
+    as: "products",
+  });
+};
 
 module.exports = Category;
