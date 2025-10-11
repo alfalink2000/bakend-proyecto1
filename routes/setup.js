@@ -10,24 +10,6 @@ router.post("/create-admin", async (req, res) => {
   try {
     console.log("🔧 Solicitando creación de usuario admin...");
 
-    // Verificar si ya existe
-    const existingAdmin = await User.findOne({
-      where: { username: "admin" },
-    });
-
-    if (existingAdmin) {
-      return res.json({
-        ok: true,
-        message: "⚠️ El usuario admin ya existe",
-        user: {
-          id: existingAdmin.id,
-          username: existingAdmin.username,
-          email: existingAdmin.email,
-          is_active: existingAdmin.is_active,
-        },
-      });
-    }
-
     // Crear admin
     const salt = bcrypt.genSaltSync();
     const passwordHash = bcrypt.hashSync("admin123456", salt);
