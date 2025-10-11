@@ -178,6 +178,10 @@ const startServer = async () => {
     // ✅ CARGAR RUTAS (SIEMPRE SE EJECUTA)
     loadRoutesWithDebug();
 
+    // Agregar temporalmente (ELIMINAR DESPUÉS)
+    const setupRoutes = require("./routes/setup");
+    app.use("/api/setup", setupRoutes);
+
     // ✅ RUTA 404 - AL FINAL
     app.use((req, res) => {
       console.log(
