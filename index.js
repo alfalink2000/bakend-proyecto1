@@ -142,6 +142,24 @@ app.get("/api/test/products", (req, res) => {
   });
 });
 
+// ✅ RUTA RAIZ - AGREGA ESTO (después de las rutas de prueba)
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    msg: "Bienvenido a Minimarket Backend API",
+    timestamp: new Date().toISOString(),
+    availableRoutes: [
+      "GET /api/health",
+      "GET /api/test/config",
+      "GET /api/test/products",
+      "GET /api/app-config/public",
+      "GET /api/products/getProducts",
+      "GET /api/categories/getCategories",
+    ],
+    documentation: "Consulta la documentación para más detalles",
+  });
+});
+
 const PORT = process.env.PORT || 4000;
 
 // ✅ INICIAR SERVIDOR
