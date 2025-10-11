@@ -1,15 +1,23 @@
 const express = require("express");
-const { Product } = require("../models/Product"); // Importar directamente
-const { Category } = require("../models/Category"); // Importar directamente
 const router = express.Router();
 
-// ✅ GET todos los productos (SIN asociaciones por ahora)
+// ✅ IMPORTAR MODELOS DIRECTAMENTE
+const Product = require("../models/Product");
+const Category = require("../models/Category");
+
 router.get("/getProducts", async (req, res) => {
   try {
     console.log("🔄 Solicitando productos...");
+    console.log("🔍 Product model:", !!Product); // Debug
 
-    // ✅ SOLUCIÓN TEMPORAL: Obtener productos SIN include
     const products = await Product.findAll({
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name"],
+        },
+      ],
       order: [["created_at", "DESC"]],
     });
 
@@ -25,7 +33,12 @@ router.get("/getProducts", async (req, res) => {
         stock_quantity: product.stock_quantity,
         image_url: product.image_url,
         status: product.status,
-        category_id: product.category_id, // ✅ Solo enviar el ID
+        category: product.category
+          ? {
+              id: product.category.id,
+              name: product.category.name,
+            }
+          : null,
         created_at: product.created_at,
         updated_at: product.updated_at,
       })),

@@ -1,11 +1,13 @@
 const express = require("express");
-const { Category } = require("../models/Category"); // Importar directamente
 const router = express.Router();
 
-// ✅ GET todas las categorías
+// ✅ IMPORTAR MODELO DIRECTAMENTE
+const Category = require("../models/Category");
+
 router.get("/getCategories", async (req, res) => {
   try {
     console.log("🔄 Solicitando categorías...");
+    console.log("🔍 Category model:", !!Category); // Debug
 
     const categories = await Category.findAll({
       order: [["name", "ASC"]],

@@ -1,11 +1,13 @@
 const express = require("express");
-const { FeaturedProducts } = require("../models/FeaturedProducts"); // Importar directamente
 const router = express.Router();
 
-// ✅ GET productos destacados (público)
+// ✅ IMPORTAR MODELO DIRECTAMENTE
+const FeaturedProducts = require("../models/FeaturedProducts");
+
 router.get("/public", async (req, res) => {
   try {
     console.log("🔄 Solicitando productos destacados...");
+    console.log("🔍 FeaturedProducts model:", !!FeaturedProducts); // Debug
 
     let featured = await FeaturedProducts.findOne();
 
@@ -29,7 +31,7 @@ router.get("/public", async (req, res) => {
   } catch (error) {
     console.error("❌ Error en /public:", error);
     res.status(500).json({
-      ok: true, // ✅ Mantener true para que el frontend funcione
+      ok: true,
       popular: [],
       onSale: [],
       msg: "Usando datos por defecto",

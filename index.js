@@ -93,24 +93,24 @@ app.get("/api/test/products", (req, res) => {
 });
 
 // ✅ CARGAR MODELOS DIRECTAMENTE (VERSIÓN SIMPLIFICADA)
-const loadModels = async () => {
-  try {
-    console.log("🔄 Cargando modelos...");
+// const loadModels = async () => {
+//   try {
+//     console.log("🔄 Cargando modelos...");
 
-    // Solo importar los modelos - ya están asociados en su definición
-    require("./models/Product");
-    require("./models/Category");
-    require("./models/AppConfig");
-    require("./models/User");
-    require("./models/FeaturedProducts");
+//     // Solo importar los modelos - ya están asociados en su definición
+//     require("./models/Product");
+//     require("./models/Category");
+//     require("./models/AppConfig");
+//     require("./models/User");
+//     require("./models/FeaturedProducts");
 
-    console.log("✅ Modelos cargados correctamente");
-    return true;
-  } catch (error) {
-    console.error("❌ Error cargando modelos:", error.message);
-    return false;
-  }
-};
+//     console.log("✅ Modelos cargados correctamente");
+//     return true;
+//   } catch (error) {
+//     console.error("❌ Error cargando modelos:", error.message);
+//     return false;
+//   }
+// };
 
 // ✅ VERIFICACIÓN DE ARCHIVOS DE RUTAS
 console.log("🔍 Verificando archivos de rutas...");
@@ -183,7 +183,7 @@ const startServer = async () => {
         dbConnected = true;
 
         // ✅ CARGAR MODELOS SIMPLEMENTE
-        await loadModels();
+        // await loadModels();
 
         // Sincronizar modelos solo en desarrollo y si la BD está conectada
         if (process.env.NODE_ENV === "development" && dbConnected) {

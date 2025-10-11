@@ -1,11 +1,13 @@
 const express = require("express");
-const { AppConfig } = require("../models/AppConfig"); // Importar directamente
 const router = express.Router();
 
-// ✅ GET configuración pública
+// ✅ IMPORTAR MODELO DIRECTAMENTE
+const AppConfig = require("../models/AppConfig");
+
 router.get("/public", async (req, res) => {
   try {
     console.log("🔧 Solicitando configuración pública...");
+    console.log("🔍 AppConfig model:", !!AppConfig); // Debug
 
     let config = await AppConfig.findOne();
 
