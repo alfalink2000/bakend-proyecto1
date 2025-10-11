@@ -90,4 +90,4 @@ Thumbs.db
 
 # Build directories
 dist/
-build/
+build/"node_modules/" 

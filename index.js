@@ -241,5 +241,13 @@ const startServer = async () => {
   }
 };
 
+console.log("🔍 Debug Database URL:", {
+  hasUrl: !!process.env.DATABASE_URL,
+  urlLength: process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0,
+  host: process.env.DATABASE_URL
+    ? new URL(process.env.DATABASE_URL).hostname
+    : "No URL",
+});
+
 // ✅ INICIAR TODO
 startServer();
