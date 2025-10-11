@@ -217,13 +217,13 @@ const startServer = async () => {
   }
 };
 
-// ✅ REEMPLAZA CON ESTO (más seguro):
-if (process.env.DATABASE_URL) {
-  const cleanDbUrl = process.env.DATABASE_URL.split("\n")[0];
-  console.log("🔗 Database configurada - Host:", new URL(cleanDbUrl).hostname);
-} else {
-  console.log("❌ DATABASE_URL no configurada");
-}
+// // ✅ REEMPLAZA CON ESTO (más seguro):
+// if (process.env.DATABASE_URL) {
+//   const cleanDbUrl = process.env.DATABASE_URL.split("\n")[0];
+//   console.log("🔗 Database configurada - Host:", new URL(cleanDbUrl).hostname);
+// } else {
+//   console.log("❌ DATABASE_URL no configurada");
+// }
 
 // ✅ INICIAR TODO
 startServer();
