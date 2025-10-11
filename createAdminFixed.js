@@ -20,7 +20,7 @@ async function createAdminUser() {
 
     // Crear hash de la contraseña "admin"
     const salt = bcrypt.genSaltSync();
-    const hashedPassword = bcrypt.hashSync("admin", salt);
+    const hashedPassword = bcrypt.hashSync("admin123456", salt);
 
     console.log('🔑 Hash generado para "admin":', hashedPassword);
 
