@@ -1,7 +1,6 @@
-// server.js - VERSIÓN CON DEBUGGING MEJORADO
+// server.js - VERSIÓN QUE SIEMPRE INICIA (CON O SIN BD)
 require("dotenv").config();
 const express = require("express");
-const { db } = require("./database/connection");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
@@ -30,16 +29,70 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ RUTA DE HEALTH CHECK
-app.get("/api/health", (req, res) => {
+// ✅ RUTA DE HEALTH CHECK MEJORADA
+app.get("/api/health", async (req, res) => {
+  let dbStatus = "unknown";
+  try {
+    const { db } = require("./database/connection");
+    await db.authenticate();
+    dbStatus = "connected";
+  } catch (error) {
+    dbStatus = "disconnected";
+  }
+
   res.json({
     ok: true,
     msg: "Servidor funcionando",
+    database: dbStatus,
+    environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
 });
 
-// ✅ CARGAR MODELOS Y ASOCIACIONES CORRECTAMENTE
+// ✅ RUTA RAIZ - MOVIDA AL PRINCIPIO
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    msg: "Bienvenido a Minimarket Backend API",
+    timestamp: new Date().toISOString(),
+    status: "online",
+    availableRoutes: [
+      "GET /api/health",
+      "GET /api/test/config",
+      "GET /api/test/products",
+      "GET /api/app-config/public",
+      "GET /api/products/getProducts",
+      "GET /api/categories/getCategories",
+    ],
+  });
+});
+
+// ✅ RUTAS TEMPORALES PARA PRUEBA
+app.get("/api/test/config", (req, res) => {
+  console.log("✅ Ruta de prueba /api/test/config accedida");
+  res.json({
+    ok: true,
+    msg: "Ruta de prueba funcionando",
+    config: {
+      app_name: "Minimarket Test",
+      theme: "blue",
+    },
+    environment: process.env.NODE_ENV,
+  });
+});
+
+app.get("/api/test/products", (req, res) => {
+  console.log("✅ Ruta de prueba /api/test/products accedida");
+  res.json({
+    ok: true,
+    products: [
+      { id: 1, name: "Producto Test 1", price: 10.99 },
+      { id: 2, name: "Producto Test 2", price: 15.5 },
+    ],
+  });
+});
+
+// ✅ CARGAR MODELOS Y ASOCIACIONES (OPCIONAL)
 const loadModelsAndAssociations = async () => {
   try {
     console.log("🔄 Cargando modelos y asociaciones...");
@@ -64,9 +117,10 @@ const loadModelsAndAssociations = async () => {
     });
 
     console.log("✅ Modelos y asociaciones cargadas correctamente");
+    return true;
   } catch (error) {
-    console.error("❌ Error cargando modelos:", error);
-    throw error;
+    console.error("❌ Error cargando modelos:", error.message);
+    return false;
   }
 };
 
@@ -111,74 +165,53 @@ const loadRoutesWithDebug = () => {
       console.log(`✅ Ruta cargada: ${route.path}`);
     } catch (error) {
       console.error(`❌ Error cargando ${route.path}:`, error.message);
-      console.error(`   Stack:`, error.stack);
     }
   });
 
   console.log("✅ CARGA DE RUTAS COMPLETADA\n");
 };
 
-// ✅ RUTAS TEMPORALES PARA PRUEBA (AGREGA ESTO)
-app.get("/api/test/config", (req, res) => {
-  console.log("✅ Ruta de prueba /api/test/config accedida");
-  res.json({
-    ok: true,
-    msg: "Ruta de prueba funcionando",
-    config: {
-      app_name: "Minimarket Test",
-      theme: "blue",
-    },
-  });
-});
-
-app.get("/api/test/products", (req, res) => {
-  console.log("✅ Ruta de prueba /api/test/products accedida");
-  res.json({
-    ok: true,
-    products: [
-      { id: 1, name: "Producto Test 1", price: 10.99 },
-      { id: 2, name: "Producto Test 2", price: 15.5 },
-    ],
-  });
-});
-
-// ✅ RUTA RAIZ - AGREGA ESTO (después de las rutas de prueba)
-app.get("/", (req, res) => {
-  res.json({
-    ok: true,
-    msg: "Bienvenido a Minimarket Backend API",
-    timestamp: new Date().toISOString(),
-    availableRoutes: [
-      "GET /api/health",
-      "GET /api/test/config",
-      "GET /api/test/products",
-      "GET /api/app-config/public",
-      "GET /api/products/getProducts",
-      "GET /api/categories/getCategories",
-    ],
-    documentation: "Consulta la documentación para más detalles",
-  });
-});
-
 const PORT = process.env.PORT || 4000;
 
-// ✅ INICIAR SERVIDOR
+// ✅ INICIAR SERVIDOR (VERSIÓN MEJORADA - NO BLOQUEANTE)
 const startServer = async () => {
   try {
     console.log("🚀 Iniciando servidor...");
+    console.log("🌍 Environment:", process.env.NODE_ENV);
+    console.log(
+      "🔗 Database URL:",
+      process.env.DATABASE_URL ? "✅ Configurada" : "❌ No configurada"
+    );
 
-    // Conectar a la base de datos
-    await db.authenticate();
-    console.log("✅ Base de datos conectada");
-    // ✅ CARGAR ASOCIACIONES ANTES DE SINCRONIZAR
-    await loadModelsAndAssociations();
-    // Sincronizar modelos
-    if (process.env.NODE_ENV === "development") {
-      await db.sync({ force: false, alter: true });
-      console.log("✅ Modelos sincronizados");
+    let dbConnected = false;
+
+    // ✅ INTENTAR CONEXIÓN A BD (NO BLOQUEANTE)
+    if (process.env.DATABASE_URL) {
+      try {
+        const { db } = require("./database/connection");
+        console.log("🔌 Intentando conectar a la base de datos...");
+        await db.authenticate();
+        console.log("✅ Base de datos conectada");
+        dbConnected = true;
+
+        // ✅ CARGAR ASOCIACIONES SI LA BD ESTÁ CONECTADA
+        await loadModelsAndAssociations();
+
+        // Sincronizar modelos solo en desarrollo y si la BD está conectada
+        if (process.env.NODE_ENV === "development" && dbConnected) {
+          await db.sync({ force: false, alter: true });
+          console.log("✅ Modelos sincronizados");
+        }
+      } catch (dbError) {
+        console.log("❌ Error conectando a BD:", dbError.message);
+        console.log("🔄 Continuando sin base de datos...");
+        dbConnected = false;
+      }
+    } else {
+      console.log("⚠️  No hay DATABASE_URL configurada - Iniciando sin BD");
     }
 
-    // Cargar rutas
+    // ✅ CARGAR RUTAS (SIEMPRE SE EJECUTA)
     loadRoutesWithDebug();
 
     // ✅ RUTA 404 - AL FINAL
@@ -198,25 +231,27 @@ const startServer = async () => {
       });
     });
 
-    // Iniciar servidor
+    // ✅ INICIAR SERVIDOR (SIEMPRE SE EJECUTA)
     app.listen(PORT, () => {
-      console.log(`\n🎉 SERVIDOR INICIADO EN http://localhost:${PORT}`);
-      console.log(`🔗 Health Check: http://localhost:${PORT}/api/health`);
-      console.log(`🔗 Test Config: http://localhost:${PORT}/api/test/config`);
+      console.log(`\n🎉 🎉 🎉 SERVIDOR INICIADO EXITOSAMENTE 🎉 🎉 🎉`);
+      console.log(`📍 Puerto: ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
       console.log(
-        `🔗 Test Products: http://localhost:${PORT}/api/test/products`
+        `🗄️  Base de datos: ${dbConnected ? "✅ Conectada" : "❌ No conectada"}`
+      );
+      console.log(`🔗 URL: https://minimarket-backend-6z9m.onrender.com`);
+      console.log(
+        `✅ Health Check: https://minimarket-backend-6z9m.onrender.com/api/health`
       );
       console.log(
-        `🔗 App Config: http://localhost:${PORT}/api/app-config/public`
-      );
-      console.log(
-        `🔗 Products: http://localhost:${PORT}/api/products/getProducts`
+        `✅ Test Config: https://minimarket-backend-6z9m.onrender.com/api/test/config`
       );
     });
   } catch (error) {
-    console.error("❌ Error iniciando servidor:", error);
+    console.error("❌ Error crítico iniciando servidor:", error);
     process.exit(1);
   }
 };
 
+// ✅ INICIAR TODO
 startServer();
