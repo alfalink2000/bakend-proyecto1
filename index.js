@@ -9,10 +9,7 @@ const app = express();
 // ✅ CONFIGURACIÓN CORS SIMPLIFICADA
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://minimarket-frontend-sage.vercel.app",
-    ],
+    origin: ["https://minimarket-frontend-sage.vercel.app"],
     credentials: true,
   })
 );
