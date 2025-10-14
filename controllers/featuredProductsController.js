@@ -1,4 +1,3 @@
-// controllers/featuredProductsController.js
 const { response } = require("express");
 const FeaturedProducts = require("../models/FeaturedProducts");
 
@@ -7,11 +6,9 @@ const getFeaturedProducts = async (req, res = response) => {
   try {
     console.log("🔍 Obteniendo productos destacados...");
 
-    // Buscar el registro de productos destacados (solo debe haber uno)
     let featured = await FeaturedProducts.findOne();
 
     if (!featured) {
-      // Si no existe, crear uno por defecto
       console.log("📝 Creando registro inicial de productos destacados...");
       featured = await FeaturedProducts.create({
         popular: [],
