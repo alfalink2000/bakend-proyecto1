@@ -1,4 +1,4 @@
-// server.js - VERSIÓN QUE SIEMPRE INICIA (CON O SIN BD)
+// server.js - VERSIÓN COMPLETA CORREGIDA
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -6,11 +6,17 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-// ✅ CONFIGURACIÓN CORS SIMPLIFICADA
+
+// ✅ CONFIGURACIÓN CORS MEJORADA
 app.use(
   cors({
-    origin: ["https://minimarket-frontend-sage.vercel.app"],
+    origin: [
+      "https://minimarket-frontend-sage.vercel.app",
+      "http://localhost:3000", // Para desarrollo local
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "x-token", "Authorization"],
   })
 );
 
@@ -22,6 +28,7 @@ app.use((req, res, next) => {
   console.log(
     `🌐 ${new Date().toLocaleTimeString()} - ${req.method} ${req.originalUrl}`
   );
+  console.log(`🔑 Token presente: ${!!req.headers["x-token"]}`);
   next();
 });
 
@@ -42,28 +49,37 @@ app.get("/api/health", async (req, res) => {
     database: dbStatus,
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
+    routes: {
+      public: [
+        "GET /api/health",
+        "GET /api/app-config/public",
+        "GET /api/products/getProducts",
+        "GET /api/categories/getCategories",
+        "GET /api/featured-products/public",
+        "POST /api/auth",
+      ],
+      protected: [
+        "PUT /api/app-config",
+        "GET /api/app-config",
+        "GET /api/auth/renew",
+        "GET /api/auth/getUsers",
+      ],
+    },
   });
 });
 
-// ✅ RUTA RAIZ - MOVIDA AL PRINCIPIO
+// ✅ RUTA RAIZ - INFORMATIVA
 app.get("/", (req, res) => {
   res.json({
     ok: true,
     msg: "Bienvenido a Minimarket Backend API",
     timestamp: new Date().toISOString(),
     status: "online",
-    availableRoutes: [
-      "GET /api/health",
-      "GET /api/test/config",
-      "GET /api/test/products",
-      "GET /api/app-config/public",
-      "GET /api/products/getProducts",
-      "GET /api/categories/getCategories",
-    ],
+    documentation: "Consulta /api/health para más información",
   });
 });
 
-// ✅ RUTAS TEMPORALES PARA PRUEBA
+// ✅ RUTAS TEMPORALES PARA PRUEBA (PÚBLICAS)
 app.get("/api/test/config", (req, res) => {
   console.log("✅ Ruta de prueba /api/test/config accedida");
   res.json({
@@ -98,28 +114,49 @@ try {
   console.error("❌ Error leyendo carpeta routes:", error.message);
 }
 
-// ✅ CARGAR RUTAS CON DEBUGGING
+// ✅ CARGAR RUTAS CON DEBUGGING MEJORADO
 const loadRoutesWithDebug = () => {
   console.log("\n🔄 INICIANDO CARGA DE RUTAS...");
 
   const routes = [
-    { path: "/api/auth", file: "./routes/auth" },
-    { path: "/api/products", file: "./routes/products" },
-    { path: "/api/app-config", file: "./routes/appConfig" },
-    { path: "/api/categories", file: "./routes/categories" },
-    { path: "/api/featured-products", file: "./routes/featuredProducts" },
+    {
+      path: "/api/auth",
+      file: "./routes/auth",
+      description: "Autenticación (login público, admin protegido)",
+    },
+    {
+      path: "/api/products",
+      file: "./routes/products",
+      description: "Productos (públicos y admin)",
+    },
+    {
+      path: "/api/app-config",
+      file: "./routes/appConfig",
+      description: "Configuración (pública lectura, admin escritura)",
+    },
+    {
+      path: "/api/categories",
+      file: "./routes/categories",
+      description: "Categorías (públicas y admin)",
+    },
+    {
+      path: "/api/featured-products",
+      file: "./routes/featuredProducts",
+      description: "Productos destacados (públicos y admin)",
+    },
   ];
 
   routes.forEach((route) => {
     try {
-      console.log(`📦 Cargando: ${route.path} desde ${route.file}`);
+      console.log(`📦 Cargando: ${route.path} - ${route.description}`);
 
       // Verificar si el archivo existe
-      if (
-        !fs.existsSync(
-          path.join(__dirname, "routes", path.basename(route.file) + ".js")
-        )
-      ) {
+      const routePath = path.join(
+        __dirname,
+        "routes",
+        path.basename(route.file) + ".js"
+      );
+      if (!fs.existsSync(routePath)) {
         console.log(`❌ Archivo no existe: ${route.file}.js`);
         return;
       }
@@ -137,7 +174,7 @@ const loadRoutesWithDebug = () => {
 
 const PORT = process.env.PORT || 4000;
 
-// ✅ INICIAR SERVIDOR (VERSIÓN MEJORADA - NO BLOQUEANTE)
+// ✅ INICIAR SERVIDOR (VERSIÓN MEJORADA)
 const startServer = async () => {
   try {
     console.log("🚀 Iniciando servidor...");
@@ -148,6 +185,7 @@ const startServer = async () => {
     );
 
     let dbConnected = false;
+    let AppConfig = null;
 
     // ✅ INTENTAR CONEXIÓN A BD (NO BLOQUEANTE)
     if (process.env.DATABASE_URL) {
@@ -158,13 +196,49 @@ const startServer = async () => {
         console.log("✅ Base de datos conectada");
         dbConnected = true;
 
-        // ✅ CARGAR MODELOS SIMPLEMENTE
-        // await loadModels();
+        // ✅ CARGAR Y SINCRONIZAR MODELO AppConfig
+        try {
+          AppConfig = require("./models/AppConfig");
+          console.log("🔄 Sincronizando modelo AppConfig...");
 
-        // Sincronizar modelos solo en desarrollo y si la BD está conectada
+          await AppConfig.sync({ force: false, alter: true });
+          console.log("✅ Modelo AppConfig sincronizado");
+
+          // ✅ CREAR CONFIGURACIÓN POR DEFECTO SI NO EXISTE
+          const existingConfig = await AppConfig.findOne();
+          if (!existingConfig) {
+            console.log("📝 Creando configuración por defecto...");
+            await AppConfig.create({
+              app_name: "Minimarket Digital",
+              app_description: "Tu tienda de confianza",
+              theme: "blue",
+              whatsapp_number: "+5491112345678",
+              business_hours: "Lun-Vie: 8:00 - 20:00",
+              business_address: "Av. Principal 123",
+              logo_url: null,
+            });
+            console.log("✅ Configuración por defecto creada");
+          } else {
+            console.log(
+              "✅ Configuración existente encontrada:",
+              existingConfig.app_name
+            );
+          }
+        } catch (modelError) {
+          console.error("❌ Error con modelo AppConfig:", modelError.message);
+        }
+
+        // Sincronizar otros modelos solo en desarrollo
         if (process.env.NODE_ENV === "development" && dbConnected) {
-          await db.sync({ force: false, alter: true });
-          console.log("✅ Modelos sincronizados");
+          try {
+            await db.sync({ force: false, alter: false });
+            console.log("✅ Todos los modelos sincronizados");
+          } catch (syncError) {
+            console.log(
+              "⚠️  Algunos modelos no se sincronizaron:",
+              syncError.message
+            );
+          }
         }
       } catch (dbError) {
         console.log("❌ Error conectando a BD:", dbError.message);
@@ -175,12 +249,8 @@ const startServer = async () => {
       console.log("⚠️  No hay DATABASE_URL configurada - Iniciando sin BD");
     }
 
-    // ✅ CARGAR RUTAS (SIEMPRE SE EJECUTA)
+    // ✅ CARGAR RUTAS (SIEMPRE SE EJECUTA, CON O SIN BD)
     loadRoutesWithDebug();
-
-    // Agregar temporalmente (ELIMINAR DESPUÉS)
-    const setupRoutes = require("./routes/setup");
-    app.use("/api/setup", setupRoutes);
 
     // ✅ RUTA 404 - AL FINAL
     app.use((req, res) => {
@@ -191,15 +261,31 @@ const startServer = async () => {
         ok: false,
         msg: `Ruta no encontrada: ${req.originalUrl}`,
         method: req.method,
-        availableTestRoutes: [
-          "GET /api/health",
-          "GET /api/test/config",
-          "GET /api/test/products",
+        availableRoutes: [
+          "GET /api/health (Estado del servidor)",
+          "GET /api/app-config/public (Configuración pública)",
+          "GET /api/products/getProducts (Productos públicos)",
+          "GET /api/categories/getCategories (Categorías públicas)",
+          "POST /api/auth (Login público)",
+          "PUT /api/app-config (Configuración admin - requiere token)",
         ],
       });
     });
 
-    // ✅ INICIAR SERVIDOR (SIEMPRE SE EJECUTA)
+    // ✅ MANEJO GLOBAL DE ERRORES
+    app.use((error, req, res, next) => {
+      console.error("💥 Error global no manejado:", error);
+      res.status(500).json({
+        ok: false,
+        msg: "Error interno del servidor",
+        ...(process.env.NODE_ENV === "development" && {
+          error: error.message,
+          stack: error.stack,
+        }),
+      });
+    });
+
+    // ✅ INICIAR SERVIDOR
     app.listen(PORT, () => {
       console.log(`\n🎉 🎉 🎉 SERVIDOR INICIADO EXITOSAMENTE 🎉 🎉 🎉`);
       console.log(`📍 Puerto: ${PORT}`);
@@ -209,11 +295,23 @@ const startServer = async () => {
       );
       console.log(`🔗 URL: https://minimarket-backend-6z9m.onrender.com`);
       console.log(
-        `✅ Health Check: https://minimarket-backend-6z9m.onrender.com/api/health`
+        `📊 Health Check: https://minimarket-backend-6z9m.onrender.com/api/health`
       );
-      console.log(
-        `✅ Test Config: https://minimarket-backend-6z9m.onrender.com/api/test/config`
-      );
+
+      console.log(`\n📋 RUTAS DISPONIBLES:`);
+      console.log(`   🔓 PÚBLICAS (sin token):`);
+      console.log(`      GET  /api/health`);
+      console.log(`      GET  /api/app-config/public`);
+      console.log(`      GET  /api/products/getProducts`);
+      console.log(`      GET  /api/categories/getCategories`);
+      console.log(`      GET  /api/featured-products/public`);
+      console.log(`      POST /api/auth (login)`);
+
+      console.log(`\n   🔐 PROTEGIDAS (requieren token):`);
+      console.log(`      PUT  /api/app-config`);
+      console.log(`      GET  /api/app-config`);
+      console.log(`      GET  /api/auth/renew`);
+      console.log(`      GET  /api/auth/getUsers`);
     });
   } catch (error) {
     console.error("❌ Error crítico iniciando servidor:", error);
