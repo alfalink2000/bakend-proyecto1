@@ -1,13 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const { validarJWT } = require("../middlewares/revalidar-jwt");
 
-// ✅ IMPORTAR MODELO DIRECTAMENTE
-const AppConfig = require("../models/AppConfig");
+// ✅ IMPORTAR CONTROLADOR CORRECTO
+const {
+  getAppConfig,
+  updateAppConfig,
+} = require("../controllers/appConfigController");
 
+// ✅ RUTA PÚBLICA (para el cliente)
 router.get("/public", async (req, res) => {
   try {
     console.log("🔧 Solicitando configuración pública...");
-    console.log("🔍 AppConfig model:", !!AppConfig); // Debug
 
     let config = await AppConfig.findOne();
 
@@ -43,5 +47,11 @@ router.get("/public", async (req, res) => {
     });
   }
 });
+
+// ✅ RUTA PROTEGIDA PARA OBTENER CONFIGURACIÓN (admin)
+router.get("/", validarJWT, getAppConfig);
+
+// ✅ ✅ ✅ AGREGAR ESTA RUTA FALTANTE ✅ ✅ ✅
+router.put("/", validarJWT, updateAppConfig);
 
 module.exports = router;

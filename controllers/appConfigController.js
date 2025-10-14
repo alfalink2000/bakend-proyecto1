@@ -10,7 +10,6 @@ const getAppConfig = async (req, res = response) => {
     let config = await AppConfig.findOne();
 
     if (!config) {
-      // Crear configuración por defecto si no existe
       console.log("📝 Creando configuración inicial...");
       config = await AppConfig.create({});
     }
@@ -30,12 +29,14 @@ const getAppConfig = async (req, res = response) => {
     });
   }
 };
+
+// Actualizar configuración
 const updateAppConfig = async (req, res = response) => {
   try {
     const {
       app_name,
       app_description,
-      theme, // ← Cambiar a theme
+      theme,
       whatsapp_number,
       business_hours,
       business_address,
@@ -50,7 +51,7 @@ const updateAppConfig = async (req, res = response) => {
       await config.update({
         app_name,
         app_description,
-        theme, // ← Usar theme
+        theme,
         whatsapp_number,
         business_hours,
         business_address,
@@ -60,7 +61,7 @@ const updateAppConfig = async (req, res = response) => {
       config = await AppConfig.create({
         app_name,
         app_description,
-        theme, // ← Usar theme
+        theme,
         whatsapp_number,
         business_hours,
         business_address,
