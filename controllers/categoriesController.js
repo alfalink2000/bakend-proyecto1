@@ -1,4 +1,3 @@
-// controllers/categoriesController.js
 const { response } = require("express");
 const Category = require("../models/Category");
 
@@ -10,7 +9,12 @@ const getCategories = async (req, res = response) => {
 
     res.status(200).json({
       ok: true,
-      categories,
+      categories: categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        created_at: cat.created_at,
+        updated_at: cat.updated_at,
+      })),
     });
   } catch (error) {
     console.error(error);
@@ -38,7 +42,12 @@ const createCategory = async (req, res = response) => {
 
     res.status(201).json({
       ok: true,
-      category,
+      category: {
+        id: category.id,
+        name: category.name,
+        created_at: category.created_at,
+        updated_at: category.updated_at,
+      },
       msg: "Categoría creada exitosamente",
     });
   } catch (error) {
@@ -80,7 +89,12 @@ const updateCategory = async (req, res = response) => {
 
     res.status(200).json({
       ok: true,
-      category,
+      category: {
+        id: category.id,
+        name: category.name,
+        created_at: category.created_at,
+        updated_at: category.updated_at,
+      },
       msg: "Categoría actualizada exitosamente",
     });
   } catch (error) {
