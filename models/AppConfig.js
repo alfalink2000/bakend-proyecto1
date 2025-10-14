@@ -1,4 +1,3 @@
-// models/AppConfig.js - CORREGIDO
 const { DataTypes } = require("sequelize");
 const { db } = require("../database/connection");
 
@@ -11,40 +10,50 @@ const AppConfig = db.define(
       autoIncrement: true,
     },
     app_name: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
+      allowNull: false,
       defaultValue: "Minimarket Digital",
     },
     app_description: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
+      allowNull: false,
       defaultValue: "Tu tienda de confianza",
     },
     theme: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING,
+      allowNull: false,
       defaultValue: "blue",
     },
     whatsapp_number: {
-      type: DataTypes.STRING(20),
-      defaultValue: "+5491112345678",
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     business_hours: {
-      type: DataTypes.STRING(100),
-      defaultValue: "Lun-Vie: 8:00 - 20:00",
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     business_address: {
-      type: DataTypes.TEXT,
-      defaultValue: "Av. Principal 123",
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     logo_url: {
-      type: DataTypes.STRING(500),
+      type: DataTypes.STRING,
       allowNull: true,
+    },
+    currency: {
+      type: DataTypes.STRING,
+      defaultValue: "USD",
+    },
+    language: {
+      type: DataTypes.STRING,
+      defaultValue: "es",
     },
   },
   {
-    tableName: "app_configs", // ✅ Cambiar a plural
+    tableName: "app_configs",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-    // ✅ REMOVER validaciones estrictas temporalmente
   }
 );
 
