@@ -47,14 +47,8 @@ const crearUsuario = async (req, res = response) => {
 const loginUsuario = async (req, res = response) => {
   try {
     console.log("🔐 Datos recibidos en login:", req.body);
-    if (!usuario) {
-      console.log("❌ Usuario no encontrado:", username);
-      return res.status(400).json({
-        ok: false,
-        msg: "Usuario o contraseña incorrecta",
-      });
-    }
-    // ✅ Validación básica
+
+    // ✅ Validación básica (ESTE DEBE SER EL PRIMER PASO)
     if (!req.body.username || !req.body.password_hash) {
       return res.status(400).json({
         ok: false,
@@ -64,17 +58,21 @@ const loginUsuario = async (req, res = response) => {
 
     const { username, password_hash } = req.body;
 
+    // ✅ BUSCAR EL USUARIO PRIMERO
     const usuario = await ModeloUsuario.findOne({
       where: { username },
     });
 
+    // ✅ AHORA SÍ VERIFICAR SI EL USUARIO EXISTE
     if (!usuario) {
+      console.log("❌ Usuario no encontrado:", username);
       return res.status(400).json({
         ok: false,
         msg: "Usuario o contraseña incorrecta",
       });
     }
 
+    // ✅ EL RESTO DEL CÓDIGO PERMANECE IGUAL...
     if (!usuario.is_active) {
       return res.status(400).json({
         ok: false,
@@ -119,7 +117,6 @@ const loginUsuario = async (req, res = response) => {
     res.status(500).json({
       ok: false,
       msg: "Error interno del servidor",
-      // ✅ Solo mostrar detalles en desarrollo
       ...(process.env.NODE_ENV === "development" && {
         error: error.message,
         stack: error.stack,
