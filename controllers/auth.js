@@ -47,7 +47,13 @@ const crearUsuario = async (req, res = response) => {
 const loginUsuario = async (req, res = response) => {
   try {
     console.log("🔐 Datos recibidos en login:", req.body);
-
+    if (!usuario) {
+      console.log("❌ Usuario no encontrado:", username);
+      return res.status(400).json({
+        ok: false,
+        msg: "Usuario o contraseña incorrecta",
+      });
+    }
     // ✅ Validación básica
     if (!req.body.username || !req.body.password_hash) {
       return res.status(400).json({
