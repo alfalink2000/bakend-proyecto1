@@ -1,5 +1,7 @@
+// controllers/categoriesController.js - VERSIÓN CORREGIDA
 const { response } = require("express");
 const Category = require("../models/Category");
+const Product = require("../models/Product"); // ✅ IMPORTAR PRODUCT
 
 const getCategories = async (req, res = response) => {
   try {
@@ -61,7 +63,10 @@ const createCategory = async (req, res = response) => {
 
 const updateCategory = async (req, res = response) => {
   try {
-    const { oldName, newName } = req.body;
+    const { oldName } = req.params; // ✅ CORREGIDO: Obtener de params
+    const { newName } = req.body;
+
+    console.log("🔄 Actualizando categoría:", { oldName, newName });
 
     // Verificar si la categoría existe
     const category = await Category.findOne({ where: { name: oldName } });
@@ -110,12 +115,32 @@ const deleteCategory = async (req, res = response) => {
   try {
     const { categoryName } = req.params;
 
+    console.log("🗑️ Intentando eliminar categoría:", categoryName);
+
     // Verificar si la categoría existe
-    const category = await Category.findOne({ where: { name: categoryName } });
+    const category = await Category.findOne({
+      where: { name: categoryName },
+    });
+
     if (!category) {
       return res.status(404).json({
         ok: false,
         msg: "Categoría no encontrada",
+      });
+    }
+
+    // ✅ VERIFICAR SI LA CATEGORÍA TIENE PRODUCTOS ASOCIADOS
+    const productsInCategory = await Product.findAll({
+      where: { category_id: category.id },
+    });
+
+    if (productsInCategory && productsInCategory.length > 0) {
+      const productNames = productsInCategory.map((p) => p.name).join(", ");
+      return res.status(400).json({
+        ok: false,
+        msg: `No se puede eliminar la categoría porque tiene ${productsInCategory.length} producto(s) asociado(s)`,
+        products: productsInCategory.map((p) => ({ id: p.id, name: p.name })),
+        productsCount: productsInCategory.length,
       });
     }
 
@@ -134,7 +159,7 @@ const deleteCategory = async (req, res = response) => {
       msg: "Categoría eliminada exitosamente",
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error eliminando categoría:", error);
     res.status(500).json({
       ok: false,
       msg: "Error al eliminar la categoría",
