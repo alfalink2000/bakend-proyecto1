@@ -40,6 +40,12 @@ const AppConfig = db.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    initialinfo: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue:
+        "Bienvenido a nuestro minimarket. Ofrecemos productos de calidad con el mejor servicio. ¡Estamos aquí para ayudarte!",
+    },
     currency: {
       type: DataTypes.STRING,
       defaultValue: "USD",

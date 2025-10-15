@@ -20,6 +20,8 @@ const getPublicConfig = async (req, res = response) => {
         business_hours: "Lun-Vie: 8:00 - 20:00",
         business_address: "Av. Principal 123",
         logo_url: null,
+        initialinfo:
+          "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
         currency: "USD",
         language: "es",
       });
@@ -42,6 +44,7 @@ const getPublicConfig = async (req, res = response) => {
         whatsapp_number: config.whatsapp_number,
         business_hours: config.business_hours,
         business_address: config.business_address,
+        initialinfo: config.initialinfo, // ✅ NUEVO CAMPO
         created_at: config.created_at,
         updated_at: config.updated_at,
       },
@@ -93,6 +96,7 @@ const updateAppConfig = async (req, res = response) => {
       business_hours,
       business_address,
       logo_url,
+      initialinfo, // ✅ NUEVO CAMPO
       currency,
       language,
     } = req.body;
@@ -119,6 +123,8 @@ const updateAppConfig = async (req, res = response) => {
         business_hours: business_hours || config.business_hours,
         business_address: business_address || config.business_address,
         logo_url: logo_url !== undefined ? logo_url : config.logo_url,
+        initialinfo:
+          initialinfo !== undefined ? initialinfo : config.initialinfo, // ✅ NUEVO CAMPO
         currency: currency || config.currency,
         language: language || config.language,
       });
@@ -132,6 +138,7 @@ const updateAppConfig = async (req, res = response) => {
         business_hours,
         business_address,
         logo_url,
+        initialinfo: initialinfo || "Bienvenido a nuestro minimarket...", // ✅ NUEVO CAMPO
         currency,
         language,
       });
