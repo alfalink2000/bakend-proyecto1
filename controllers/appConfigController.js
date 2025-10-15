@@ -1,3 +1,4 @@
+// controllers/appConfigController.js
 const { response } = require("express");
 const AppConfig = require("../models/AppConfig");
 
@@ -22,6 +23,7 @@ const getPublicConfig = async (req, res = response) => {
         logo_url: null,
         initialinfo:
           "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
+        show_initialinfo: true,
         currency: "USD",
         language: "es",
       });
@@ -44,7 +46,8 @@ const getPublicConfig = async (req, res = response) => {
         whatsapp_number: config.whatsapp_number,
         business_hours: config.business_hours,
         business_address: config.business_address,
-        initialinfo: config.initialinfo, // ✅ NUEVO CAMPO
+        initialinfo: config.initialinfo,
+        show_initialinfo: config.show_initialinfo, // ✅ NUEVO CAMPO
         created_at: config.created_at,
         updated_at: config.updated_at,
       },
@@ -96,7 +99,8 @@ const updateAppConfig = async (req, res = response) => {
       business_hours,
       business_address,
       logo_url,
-      initialinfo, // ✅ NUEVO CAMPO
+      initialinfo,
+      show_initialinfo, // ✅ NUEVO CAMPO
       currency,
       language,
     } = req.body;
@@ -124,7 +128,11 @@ const updateAppConfig = async (req, res = response) => {
         business_address: business_address || config.business_address,
         logo_url: logo_url !== undefined ? logo_url : config.logo_url,
         initialinfo:
-          initialinfo !== undefined ? initialinfo : config.initialinfo, // ✅ NUEVO CAMPO
+          initialinfo !== undefined ? initialinfo : config.initialinfo,
+        show_initialinfo:
+          show_initialinfo !== undefined
+            ? show_initialinfo
+            : config.show_initialinfo, // ✅ NUEVO CAMPO
         currency: currency || config.currency,
         language: language || config.language,
       });
@@ -138,7 +146,11 @@ const updateAppConfig = async (req, res = response) => {
         business_hours,
         business_address,
         logo_url,
-        initialinfo: initialinfo || "Bienvenido a nuestro minimarket...", // ✅ NUEVO CAMPO
+        initialinfo:
+          initialinfo ||
+          "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
+        show_initialinfo:
+          show_initialinfo !== undefined ? show_initialinfo : true, // ✅ NUEVO CAMPO
         currency,
         language,
       });

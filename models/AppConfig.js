@@ -1,8 +1,9 @@
+// models/AppConfig.js
 const { DataTypes } = require("sequelize");
 const { db } = require("../database/connection");
 
 const AppConfig = db.define(
-  "AppConfig",
+  "AppConfigs",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -44,7 +45,12 @@ const AppConfig = db.define(
       type: DataTypes.TEXT,
       allowNull: true,
       defaultValue:
-        "Bienvenido a nuestro minimarket. Ofrecemos productos de calidad con el mejor servicio. ¡Estamos aquí para ayudarte!",
+        "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
+    },
+    show_initialinfo: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
     currency: {
       type: DataTypes.STRING,
