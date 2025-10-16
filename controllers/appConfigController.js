@@ -24,7 +24,7 @@ const getPublicConfig = async (req, res = response) => {
         initialinfo:
           "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
         show_initialinfo: true,
-        currency: "USD",
+        currency: "MN",
         language: "es",
       });
 
