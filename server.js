@@ -12,7 +12,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://minimarket-frontend-sage.vercel.app",
+      "https://online-shop-theta-wheat.vercel.app",
       "http://localhost:3000", // Para desarrollo local
     ],
     credentials: true,
@@ -37,7 +37,7 @@ app.use((req, res, next) => {
 app.get("/api/health", async (req, res) => {
   let dbStatus = "unknown";
   try {
-    const { db } = require("./database/connection");
+    const { db } = require("./database/connection.js");
     await db.authenticate();
     dbStatus = "connected";
   } catch (error) {
@@ -191,7 +191,7 @@ const startServer = async () => {
     // ✅ INTENTAR CONEXIÓN A BD (NO BLOQUEANTE)
     if (process.env.DATABASE_URL) {
       try {
-        const { db } = require("./database/connection");
+        const { db } = require("./database/connection.js");
         console.log("🔌 Intentando conectar a la base de datos...");
         await db.authenticate();
         console.log("✅ Base de datos conectada");
@@ -199,7 +199,7 @@ const startServer = async () => {
 
         // ✅ CARGAR Y SINCRONIZAR MODELO AppConfig
         try {
-          AppConfig = require("./models/AppConfig");
+          AppConfig = require("./models/AppConfig.js");
           console.log("🔄 Sincronizando modelo AppConfig...");
 
           await AppConfig.sync({ force: false, alter: true });
