@@ -194,6 +194,16 @@ const deleteProduct = async (req, res = response) => {
       });
     }
 
+    // ✅ VALIDAR QUE NO SEA EL ÚLTIMO PRODUCTO
+    const totalProducts = await Product.count();
+
+    if (totalProducts <= 1) {
+      return res.status(400).json({
+        ok: false,
+        msg: "No se puede eliminar el último producto. El sitio necesita al menos un producto para funcionar correctamente.",
+      });
+    }
+
     await product.destroy();
 
     res.status(200).json({
