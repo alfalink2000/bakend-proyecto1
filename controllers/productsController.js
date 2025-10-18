@@ -1,4 +1,4 @@
-// controllers/productsController.js
+// controllers/productsController.js - VERSIÓN CORREGIDA
 const { response } = require("express");
 const Product = require("../models/Product");
 const Category = require("../models/Category");
@@ -8,12 +8,11 @@ const getProducts = async (req, res = response) => {
   try {
     console.log("🔍 Intentando obtener productos...");
 
-    // ✅ USAR EL ALIAS CORRECTO 'category' (singular)
     const products = await Product.findAll({
       include: [
         {
-          model: require("../models/Category"), // Importar directamente
-          as: "category", // ✅ Usar el alias definido en las asociaciones
+          model: Category,
+          as: "category",
           attributes: ["id", "name"],
         },
       ],
@@ -44,6 +43,35 @@ const createProduct = async (req, res = response) => {
     const { name, description, price, category_id, status, stock_quantity } =
       req.body;
 
+    console.log("🔄 Creando nuevo producto:", {
+      name,
+      price,
+      category_id,
+      hasImage: !!req.file,
+    });
+
+    // ✅ VALIDACIONES MEJORADAS
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: "El nombre del producto es requerido",
+      });
+    }
+
+    if (!price || isNaN(price) || parseFloat(price) <= 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: "El precio debe ser un número mayor a 0",
+      });
+    }
+
+    if (!category_id || isNaN(category_id)) {
+      return res.status(400).json({
+        ok: false,
+        msg: "La categoría es requerida",
+      });
+    }
+
     // Verificar si la categoría existe
     const category = await Category.findByPk(category_id);
     if (!category) {
@@ -59,6 +87,15 @@ const createProduct = async (req, res = response) => {
     if (req.file) {
       try {
         console.log("🖼️ Procesando imagen...");
+
+        // Validar tamaño
+        if (req.file.size > 5 * 1024 * 1024) {
+          return res.status(400).json({
+            ok: false,
+            msg: "La imagen es demasiado grande. Máximo 5MB permitido.",
+          });
+        }
+
         imageUrl = await uploadToImgBB(req.file.buffer);
         console.log("✅ Imagen procesada:", imageUrl);
       } catch (uploadError) {
@@ -71,13 +108,13 @@ const createProduct = async (req, res = response) => {
     }
 
     const product = await Product.create({
-      name,
-      description,
+      name: name.trim(),
+      description: description ? description.trim() : "",
       price: parseFloat(price),
-      category_id,
-      image_url: imageUrl, // URL de ImgBB
+      category_id: parseInt(category_id),
+      image_url: imageUrl,
       status: status || "available",
-      stock_quantity: stock_quantity || 0,
+      stock_quantity: stock_quantity ? parseInt(stock_quantity) : 0,
     });
 
     // Cargar la categoría relacionada para la respuesta
@@ -90,16 +127,19 @@ const createProduct = async (req, res = response) => {
       ],
     });
 
+    console.log("✅ Producto creado exitosamente - ID:", product.id);
+
     res.status(201).json({
       ok: true,
       product,
       msg: "Producto creado exitosamente",
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error en createProduct:", error);
     res.status(500).json({
       ok: false,
       msg: "Error al crear el producto",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -109,6 +149,16 @@ const updateProduct = async (req, res = response) => {
     const { id } = req.params;
     const { name, description, price, category_id, status, stock_quantity } =
       req.body;
+
+    console.log("🔄 Actualizando producto ID:", id);
+
+    // Validaciones básicas
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: "El nombre del producto es requerido",
+      });
+    }
 
     const product = await Product.findByPk(id);
     if (!product) {
@@ -148,14 +198,16 @@ const updateProduct = async (req, res = response) => {
 
     // Actualizar el producto
     await product.update({
-      name: name || product.name,
-      description: description || product.description,
+      name: name.trim(),
+      description: description ? description.trim() : product.description,
       price: price ? parseFloat(price) : product.price,
-      category_id: category_id || product.category_id,
+      category_id: category_id ? parseInt(category_id) : product.category_id,
       image_url: imageUrl,
       status: status || product.status,
       stock_quantity:
-        stock_quantity !== undefined ? stock_quantity : product.stock_quantity,
+        stock_quantity !== undefined
+          ? parseInt(stock_quantity)
+          : product.stock_quantity,
     });
 
     // Cargar la categoría relacionada para la respuesta
@@ -168,16 +220,19 @@ const updateProduct = async (req, res = response) => {
       ],
     });
 
+    console.log("✅ Producto actualizado exitosamente");
+
     res.status(200).json({
       ok: true,
       product,
       msg: "Producto actualizado exitosamente",
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error en updateProduct:", error);
     res.status(500).json({
       ok: false,
       msg: "Error al actualizar el producto",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -185,6 +240,8 @@ const updateProduct = async (req, res = response) => {
 const deleteProduct = async (req, res = response) => {
   try {
     const { id } = req.params;
+
+    console.log("🔄 Eliminando producto ID:", id);
 
     const product = await Product.findByPk(id);
     if (!product) {
@@ -196,7 +253,6 @@ const deleteProduct = async (req, res = response) => {
 
     // ✅ VALIDAR QUE NO SEA EL ÚLTIMO PRODUCTO
     const totalProducts = await Product.count();
-
     if (totalProducts <= 1) {
       return res.status(400).json({
         ok: false,
@@ -206,15 +262,18 @@ const deleteProduct = async (req, res = response) => {
 
     await product.destroy();
 
+    console.log("✅ Producto eliminado exitosamente");
+
     res.status(200).json({
       ok: true,
       msg: "Producto eliminado exitosamente",
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error en deleteProduct:", error);
     res.status(500).json({
       ok: false,
       msg: "Error al eliminar el producto",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -244,10 +303,11 @@ const getProductById = async (req, res = response) => {
       product,
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error en getProductById:", error);
     res.status(500).json({
       ok: false,
       msg: "Error al obtener el producto",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
