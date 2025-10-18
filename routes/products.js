@@ -1,3 +1,4 @@
+// routes/products.js - VERSIÓN CORREGIDA
 const express = require("express");
 const multer = require("multer");
 const { Product, Category } = require("../models");
@@ -5,7 +6,7 @@ const { uploadToImgBB } = require("../services/imageService");
 
 const router = express.Router();
 
-// ✅ CONFIGURACIÓN MULTER CON VALIDACIONES COMPLETAS
+// ✅ CONFIGURACIÓN MULTER MEJORADA
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
@@ -13,7 +14,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB límite
   },
   fileFilter: (req, file, cb) => {
-    // ✅ VALIDAR TIPO DE ARCHIVO
     const allowedMimes = [
       "image/jpeg",
       "image/jpg",
@@ -53,7 +53,7 @@ const handleMulterError = (error, req, res, next) => {
   next();
 };
 
-// ✅ RUTA ORIGINAL (que funcionaba)
+// ✅ RUTA PARA OBTENER PRODUCTOS
 router.get("/getProducts", async (req, res) => {
   try {
     console.log("🔄 Solicitando productos...");
@@ -96,31 +96,29 @@ router.get("/getProducts", async (req, res) => {
     res.status(500).json({
       ok: false,
       msg: "Error al cargar productos",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
 
-// ✅ RUTA PARA ACTUALIZAR PRODUCTOS (CON VALIDACIONES Y COMPRESIÓN)
-router.put(
-  "/update/:id",
+// ✅ RUTA PARA CREAR PRODUCTOS - VERSIÓN MEJORADA
+router.post(
+  "/new",
   upload.single("image"),
   handleMulterError,
   async (req, res) => {
     try {
-      const { id } = req.params;
       const { name, description, price, category_id, status, stock_quantity } =
         req.body;
 
-      console.log("🔄 Actualizando producto ID:", id);
-      console.log("📦 Datos recibidos:", {
+      console.log("🔄 Creando nuevo producto:", {
         name,
         price,
-        status,
-        stock_quantity,
+        category_id,
+        hasImage: !!req.file,
       });
 
-      // ✅ VALIDACIONES BÁSICAS
+      // ✅ VALIDACIONES MEJORADAS
       if (!name || name.trim().length === 0) {
         return res.status(400).json({
           ok: false,
@@ -139,6 +137,132 @@ router.put(
         return res.status(400).json({
           ok: false,
           msg: "La categoría es requerida",
+        });
+      }
+
+      // Verificar categoría
+      const category = await Category.findByPk(category_id);
+      if (!category) {
+        return res.status(400).json({
+          ok: false,
+          msg: "La categoría seleccionada no existe",
+        });
+      }
+
+      let imageUrl = "";
+
+      // ✅ PROCESAR IMAGEN CON MANEJO DE ERRORES MEJORADO
+      if (req.file) {
+        try {
+          console.log("🖼️ Procesando imagen...");
+
+          // Validar tamaño
+          if (req.file.size > 5 * 1024 * 1024) {
+            return res.status(400).json({
+              ok: false,
+              msg: "La imagen es demasiado grande. Máximo 5MB permitido.",
+            });
+          }
+
+          // Subir a ImgBB
+          imageUrl = await uploadToImgBB(req.file.buffer);
+          console.log("✅ Imagen subida exitosamente:", imageUrl);
+        } catch (uploadError) {
+          console.error("❌ Error subiendo imagen:", uploadError);
+          return res.status(500).json({
+            ok: false,
+            msg: "Error al subir la imagen: " + uploadError.message,
+          });
+        }
+      }
+
+      // ✅ CREAR PRODUCTO CON MANEJO DE ERRORES
+      let product;
+      try {
+        product = await Product.create({
+          name: name.trim(),
+          description: description ? description.trim() : "",
+          price: parseFloat(price),
+          category_id: parseInt(category_id),
+          image_url: imageUrl,
+          status: status || "available",
+          stock_quantity: stock_quantity ? parseInt(stock_quantity) : 0,
+        });
+
+        // Recargar con categoría
+        await product.reload({
+          include: [
+            {
+              model: Category,
+              as: "category",
+            },
+          ],
+        });
+      } catch (dbError) {
+        console.error("❌ Error creando producto en BD:", dbError);
+        return res.status(500).json({
+          ok: false,
+          msg: "Error al guardar el producto en la base de datos",
+          error:
+            process.env.NODE_ENV === "development"
+              ? dbError.message
+              : undefined,
+        });
+      }
+
+      console.log("✅ Producto creado exitosamente - ID:", product.id);
+
+      res.status(201).json({
+        ok: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: parseFloat(product.price),
+          stock_quantity: product.stock_quantity,
+          image_url: product.image_url,
+          status: product.status,
+          category: product.category
+            ? {
+                id: product.category.id,
+                name: product.category.name,
+              }
+            : null,
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+        },
+        msg: "Producto creado exitosamente",
+      });
+    } catch (error) {
+      console.error("❌ Error general en /new:", error);
+      res.status(500).json({
+        ok: false,
+        msg: "Error interno del servidor al crear el producto",
+        error:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
+    }
+  }
+);
+
+// ✅ RUTA PARA ACTUALIZAR PRODUCTOS
+router.put(
+  "/update/:id",
+  upload.single("image"),
+  handleMulterError,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description, price, category_id, status, stock_quantity } =
+        req.body;
+
+      console.log("🔄 Actualizando producto ID:", id);
+
+      // Validaciones básicas
+      if (!name || name.trim().length === 0) {
+        return res.status(400).json({
+          ok: false,
+          msg: "El nombre del producto es requerido",
         });
       }
 
@@ -163,29 +287,17 @@ router.put(
 
       let imageUrl = product.image_url;
 
-      // ✅ PROCESAR NUEVA IMAGEN CON COMPRESIÓN (SI SE SUBIÓ)
+      // Procesar nueva imagen si se subió
       if (req.file) {
         try {
           console.log("🖼️ Procesando nueva imagen...");
-
-          // ✅ VALIDAR TAMAÑO DE IMAGEN ANTES DE SUBIR
-          if (req.file.size > 5 * 1024 * 1024) {
-            return res.status(400).json({
-              ok: false,
-              msg: "La imagen es demasiado grande. Máximo 5MB permitido.",
-            });
-          }
-
-          // ✅ USAR uploadToImgBB QUE INCLUYE COMPRESIÓN AUTOMÁTICA
-          console.log("📤 Enviando imagen para compresión y upload...");
           imageUrl = await uploadToImgBB(req.file.buffer);
-
-          console.log("✅ Nueva imagen comprimida y subida:", imageUrl);
+          console.log("✅ Nueva imagen procesada:", imageUrl);
         } catch (uploadError) {
-          console.error("❌ Error procesando nueva imagen:", uploadError);
+          console.error("❌ Error subiendo nueva imagen:", uploadError);
           return res.status(500).json({
             ok: false,
-            msg: "Error al procesar la nueva imagen: " + uploadError.message,
+            msg: "Error al subir la nueva imagen: " + uploadError.message,
           });
         }
       }
@@ -194,8 +306,8 @@ router.put(
       await product.update({
         name: name.trim(),
         description: description ? description.trim() : product.description,
-        price: parseFloat(price),
-        category_id: parseInt(category_id),
+        price: price ? parseFloat(price) : product.price,
+        category_id: category_id ? parseInt(category_id) : product.category_id,
         image_url: imageUrl,
         status: status || product.status,
         stock_quantity:
@@ -240,137 +352,14 @@ router.put(
       res.status(500).json({
         ok: false,
         msg: "Error al actualizar el producto",
-        error: error.message,
+        error:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
   }
 );
 
-// ✅ RUTA PARA CREAR PRODUCTOS (CON VALIDACIONES Y COMPRESIÓN)
-router.post(
-  "/new",
-  upload.single("image"),
-  handleMulterError,
-  async (req, res) => {
-    try {
-      const { name, description, price, category_id, status, stock_quantity } =
-        req.body;
-
-      console.log("🔄 Creando nuevo producto:", { name, price, category_id });
-
-      // ✅ VALIDACIONES BÁSICAS
-      if (!name || name.trim().length === 0) {
-        return res.status(400).json({
-          ok: false,
-          msg: "El nombre del producto es requerido",
-        });
-      }
-
-      if (!price || isNaN(price) || parseFloat(price) <= 0) {
-        return res.status(400).json({
-          ok: false,
-          msg: "El precio debe ser un número mayor a 0",
-        });
-      }
-
-      if (!category_id || isNaN(category_id)) {
-        return res.status(400).json({
-          ok: false,
-          msg: "La categoría es requerida",
-        });
-      }
-
-      // Verificar categoría
-      const category = await Category.findByPk(category_id);
-      if (!category) {
-        return res.status(400).json({
-          ok: false,
-          msg: "La categoría seleccionada no existe",
-        });
-      }
-
-      let imageUrl = "";
-
-      // ✅ PROCESAR IMAGEN CON COMPRESIÓN (SI EXISTE)
-      if (req.file) {
-        try {
-          console.log("🖼️ Procesando imagen...");
-
-          // ✅ VALIDAR TAMAÑO DE IMAGEN ANTES DE SUBIR
-          if (req.file.size > 5 * 1024 * 1024) {
-            return res.status(400).json({
-              ok: false,
-              msg: "La imagen es demasiado grande. Máximo 5MB permitido.",
-            });
-          }
-
-          // ✅ USAR uploadToImgBB QUE INCLUYE COMPRESIÓN AUTOMÁTICA
-          console.log("📤 Enviando imagen para compresión y upload...");
-          imageUrl = await uploadToImgBB(req.file.buffer);
-
-          console.log("✅ Imagen comprimida y subida:", imageUrl);
-        } catch (uploadError) {
-          console.error("❌ Error procesando imagen:", uploadError);
-          return res.status(500).json({
-            ok: false,
-            msg: "Error al procesar la imagen: " + uploadError.message,
-          });
-        }
-      }
-
-      const product = await Product.create({
-        name: name.trim(),
-        description: description ? description.trim() : "",
-        price: parseFloat(price),
-        category_id: parseInt(category_id),
-        image_url: imageUrl,
-        status: status || "available",
-        stock_quantity: stock_quantity ? parseInt(stock_quantity) : 0,
-      });
-
-      // Recargar con categoría
-      await product.reload({
-        include: [
-          {
-            model: Category,
-            as: "category",
-          },
-        ],
-      });
-
-      console.log("✅ Producto creado exitosamente");
-
-      res.json({
-        ok: true,
-        product: {
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          price: parseFloat(product.price),
-          stock_quantity: product.stock_quantity,
-          image_url: product.image_url,
-          status: product.status,
-          category: product.category
-            ? {
-                id: product.category.id,
-                name: product.category.name,
-              }
-            : null,
-        },
-        msg: "Producto creado exitosamente",
-      });
-    } catch (error) {
-      console.error("❌ Error en /new:", error);
-      res.status(500).json({
-        ok: false,
-        msg: "Error al crear el producto",
-        error: error.message,
-      });
-    }
-  }
-);
-
-// ✅ RUTA PARA ELIMINAR PRODUCTOS
+// ✅ RUTA PARA ELIMINAR PRODUCTOS CON VALIDACIÓN DE ÚLTIMO PRODUCTO
 router.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -382,6 +371,15 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).json({
         ok: false,
         msg: "Producto no encontrado",
+      });
+    }
+
+    // ✅ VALIDAR QUE NO SEA EL ÚLTIMO PRODUCTO
+    const totalProducts = await Product.count();
+    if (totalProducts <= 1) {
+      return res.status(400).json({
+        ok: false,
+        msg: "No se puede eliminar el último producto. El sitio necesita al menos un producto para funcionar correctamente.",
       });
     }
 
@@ -398,7 +396,7 @@ router.delete("/delete/:id", async (req, res) => {
     res.status(500).json({
       ok: false,
       msg: "Error al eliminar el producto",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
