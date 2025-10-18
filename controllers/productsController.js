@@ -1,7 +1,7 @@
 // controllers/productsController.js - VERSIÓN CORREGIDA
 const { response } = require("express");
-const Product = require("../models/Product");
-const Category = require("../models/Category");
+// ✅ CAMBIAR: Importar desde models/index.js que tiene las asociaciones
+const { Product, Category } = require("../models");
 const { uploadToImgBB } = require("../services/imageService");
 
 const getProducts = async (req, res = response) => {
