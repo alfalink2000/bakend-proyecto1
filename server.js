@@ -12,7 +12,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://online-shop-theta-wheat.vercel.app",
+      "https://tu-kiosko.vercel.app",
       "http://localhost:3000", // Para desarrollo local
     ],
     credentials: true,
