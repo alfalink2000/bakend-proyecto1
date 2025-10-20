@@ -33,15 +33,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ RUTA DE HEALTH CHECK MEJORADA
+// ✅ RUTA DE HEALTH CHECK - VERSIÓN ESTABLE
 app.get("/api/health", async (req, res) => {
   let dbStatus = "unknown";
   try {
-    const { db } = require("./database/connection.js");
+    const { db } = require("./database/connection");
     await db.authenticate();
     dbStatus = "connected";
   } catch (error) {
     dbStatus = "disconnected";
+    console.log("❌ Health check - BD desconectada:", error.message);
   }
 
   res.json({
@@ -50,23 +51,14 @@ app.get("/api/health", async (req, res) => {
     database: dbStatus,
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
-    routes: {
-      public: [
-        "GET /api/health",
-        "GET /api/app-config/public",
-        "GET /api/products/getProducts",
-        "GET /api/categories/getCategories",
-        "GET /api/featured-products/public",
-        "POST /api/auth",
-      ],
-      protected: [
-        "PUT /api/app-config",
-        "GET /api/app-config",
-        "GET /api/auth/renew",
-        "GET /api/auth/getUsers",
-      ],
-    },
   });
+});
+
+// ✅ MÉTODO HEAD SUPER SIMPLE - SIN VERIFICACIONES COMPLEJAS
+app.head("/api/health", (req, res) => {
+  // SOLO responde 200 inmediatamente, sin lógica de BD
+  // Esto es lo que usa UptimeRobot
+  res.status(200).end();
 });
 
 // ✅ RUTA RAIZ - INFORMATIVA
