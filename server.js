@@ -286,9 +286,11 @@ const startServer = async () => {
       console.log(
         `🗄️  Base de datos: ${dbConnected ? "✅ Conectada" : "❌ No conectada"}`
       );
-      console.log(`🔗 URL: https://minimarket-backend-6z9m.onrender.com`);
       console.log(
-        `📊 Health Check: https://minimarket-backend-6z9m.onrender.com/api/health`
+        `🔗 URL: https://ruling-coralyn-alfalink2000-e12483c7.koyeb.app`
+      );
+      console.log(
+        `📊 Health Check: https://ruling-coralyn-alfalink2000-e12483c7.koyeb.app/api/health`
       );
 
       console.log(`\n📋 RUTAS DISPONIBLES:`);
