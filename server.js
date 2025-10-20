@@ -12,7 +12,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://tu-kiosko.vercel.app",
+      "https://tienda-enlinea.vercel.app",
       "http://localhost:3000", // Para desarrollo local
     ],
     credentials: true,
